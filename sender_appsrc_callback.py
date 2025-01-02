@@ -11,28 +11,16 @@ import usb.core
 import usb.util
 
 from tuning import Tuning
+from CONFIG import *
 
 # Initialize GStreamer
 Gst.init(None)
 
-# Constants
-RESPEAKER_RATE = 16000
-RESPEAKER_CHANNELS = 6
-RESPEAKER_WIDTH = 2
-RESPEAKER_INDEX = 10
-# WARNING: too high refresh rate produce large overhead. better keep tps<=25
-CHUNK = 800  # frames per buffer
-
-src1_name = "SRC1"
-src2_name = "SRC2"
-
-# Find the USB device for DOA tuning
-vendor_id, product_id = 0x2886, 0x0018
-dev = usb.core.find(idVendor=vendor_id, idProduct=product_id)
+dev = usb.core.find(idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
 if not dev:
     raise RuntimeError(
         f"Cannot fetch usb device. current config: \n"
-        f"vendor: {vendor_id}, product: {product_id}"
+        f"vendor: {VENDOR_ID}, product: {PRODUCT_ID}"
     )
 mic_tuning = Tuning(dev)
 
@@ -40,26 +28,27 @@ mic_tuning = Tuning(dev)
 p = pyaudio.PyAudio()
 
 # We create the GStreamer pipeline
+audio_rate = RESPEAKER_RATE
 pipeline_str = f"""
 rtpbin name=rtpbin \
-    appsrc name={src1_name} is-live=true format=time do-timestamp=true \
-            ! audioconvert ! audioresample ! audio/x-raw,rate={RESPEAKER_RATE},channels=1 \
+    appsrc name={SRC1_NAME} is-live=true format=time do-timestamp=true \
+            ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
             ! queue ! rtpL16pay ! rtpbin.send_rtp_sink_0 \
-        rtpbin.send_rtp_src_0 ! udpsink host=192.168.50.159 port=5000 sync=true async=false \
-        rtpbin.send_rtcp_src_0 ! udpsink host=192.168.50.159 port=5001 sync=false async=false \
+        rtpbin.send_rtp_src_0 ! udpsink host={IP} port=5000 sync=true async=false \
+        rtpbin.send_rtcp_src_0 ! udpsink host={IP} port=5001 sync=false async=false \
         udpsrc port=5005 ! rtpbin.recv_rtcp_sink_0 \
-    appsrc name={src2_name} is-live=true format=time do-timestamp=true \
-            ! audioconvert ! audioresample ! audio/x-raw,rate={RESPEAKER_RATE},channels=1 \
-            ! queue ! volume volume=0.5 ! audioconvert ! audioresample ! audio/x-raw,rate={RESPEAKER_RATE},channels=1 \
+    appsrc name={SRC2_NAME} is-live=true format=time do-timestamp=true \
+            ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+            ! queue ! volume volume=0.5 ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
             ! rtpL16pay ! rtpbin.send_rtp_sink_1 \
-        rtpbin.send_rtp_src_1 ! udpsink host=192.168.50.159 port=5002 sync=true async=false \
-        rtpbin.send_rtcp_src_1 ! udpsink host=192.168.50.159 port=5003 sync=false async=false \
+        rtpbin.send_rtp_src_1 ! udpsink host={IP} port=5002 sync=true async=false \
+        rtpbin.send_rtcp_src_1 ! udpsink host={IP} port=5003 sync=false async=false \
         udpsrc port=5007 ! rtpbin.recv_rtcp_sink_1
 """
 
 pipeline = Gst.parse_launch(pipeline_str)
-appsrc1 = pipeline.get_by_name(src1_name)
-appsrc2 = pipeline.get_by_name(src2_name)
+appsrc1 = pipeline.get_by_name(SRC1_NAME)
+appsrc2 = pipeline.get_by_name(SRC2_NAME)
 
 # Set caps for the appsrc elements (16-bit, mono, 16kHz)
 caps = Gst.Caps.from_string(

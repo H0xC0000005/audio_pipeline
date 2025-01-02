@@ -15,17 +15,22 @@
 #     audiomixer name=mix ! audioconvert ! audioresample ! autoaudiosink
 
 # rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=1.0 ! volume volume=0.6 ! mix. \
+#-----------------------------------------------------------
+# band audio clk rate: 22050
+# respeaker mic array clk rate: 16000
+#-----------------------------------------------------------
+
 gst-launch-1.0 -v rtpbin name=rtpbin \
     udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5000 ! \
     rtpjitterbuffer ! rtpbin.recv_rtp_sink_0 \
     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=-1.0 ! mix. \
     udpsrc port=5001 ! rtpbin.recv_rtcp_sink_0 \
-    rtpbin.send_rtcp_src_0 ! udpsink host=192.168.50.159 port=5005 sync=false async=false \
+    rtpbin.send_rtcp_src_0 ! udpsink host=127.0.0.1 port=5005 sync=false async=false \
     udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5002 ! \
     rtpjitterbuffer ! rtpbin.recv_rtp_sink_1 \
     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=1.0 ! mix. \
     udpsrc port=5003 ! rtpbin.recv_rtcp_sink_1 \
-    rtpbin.send_rtcp_src_1 ! udpsink host=192.168.50.159 port=5007 sync=false async=false \
+    rtpbin.send_rtcp_src_1 ! udpsink host=127.0.0.1 port=5007 sync=false async=false \
     audiomixer name=mix ! audioconvert ! audioresample ! autoaudiosink
 
 
