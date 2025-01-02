@@ -1,0 +1,3 @@
+gst-launch-1.0 -v filesrc location=CantinaBand60.wav ! wavparse  ! audioconvert ! stereo ! audioconvert ! audioresample ! autoaudiosink
+gst-launch-1.0 -v filesrc location=CantinaBand60.wav ! wavparse  ! audioconvert ! audioconvert ! audioresample ! autoaudiosink
+
