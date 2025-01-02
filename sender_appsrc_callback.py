@@ -170,9 +170,17 @@ if __name__ == "__main__":
     # Start the pipeline
     pipeline.set_state(Gst.State.PLAYING)
 
+    rate = RESPEAKER_RATE
+    format = p.get_format_from_width(RESPEAKER_WIDTH)
+    channels = RESPEAKER_CHANNELS
+    frames_per_buffer = CHUNK
+    print(f"""
+        got stats: 
+        rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_INDEX}, frames_per_buffer: {CHUNK}
+    """)
     # Open the PyAudio stream in callback mode
     stream = p.open(
-        rate=RESPEAKER_RATE,
+        rate=rate,
         format=p.get_format_from_width(RESPEAKER_WIDTH),
         channels=RESPEAKER_CHANNELS,
         input=True,

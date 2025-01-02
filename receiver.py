@@ -10,7 +10,8 @@ from CONFIG import *
 def create_pipeline():
     # Initialize GStreamer
     Gst.init(None)
-    audio_rate = 22050
+    # audio_rate = 22050
+    audio_rate = RESPEAKER_RATE
     # Use Gst.parse_launch to create the pipeline
     pipeline_description = f"""
         rtpbin name=rtpbin 

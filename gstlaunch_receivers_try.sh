@@ -21,12 +21,12 @@
 #-----------------------------------------------------------
 
 gst-launch-1.0 -v rtpbin name=rtpbin \
-    udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5000 ! \
+    udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)16000,encoding-name=(string)L16,channels=(int)1" port=5000 ! \
     rtpjitterbuffer ! rtpbin.recv_rtp_sink_0 \
     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=-1.0 ! mix. \
     udpsrc port=5001 ! rtpbin.recv_rtcp_sink_0 \
     rtpbin.send_rtcp_src_0 ! udpsink host=127.0.0.1 port=5005 sync=false async=false \
-    udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5002 ! \
+    udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)16000,encoding-name=(string)L16,channels=(int)1" port=5002 ! \
     rtpjitterbuffer ! rtpbin.recv_rtp_sink_1 \
     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=1.0 ! mix. \
     udpsrc port=5003 ! rtpbin.recv_rtcp_sink_1 \
