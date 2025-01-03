@@ -57,9 +57,6 @@ caps = Gst.Caps.from_string(
 appsrc1.set_property("caps", caps)
 appsrc2.set_property("caps", caps)
 
-print(f">>>Appsrc1 caps: {appsrc1.get_property('caps')}")
-print(f">>>Appsrc2 caps: {appsrc2.get_property('caps')}")
-
 
 # Simple helper to print the DOA
 def print_DOA(mic_tuning: Tuning):
@@ -107,26 +104,30 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
         n0 = raw_samples[1::6]
         times.append(time.perf_counter())
 
-        # Get current DOA angle
-        cur_DOA_angle = mic_tuning.direction
-        times.append(time.perf_counter())
+        if USE_DOA:
+            # Get current DOA angle
+            cur_DOA_angle = mic_tuning.direction
+            times.append(time.perf_counter())
 
-        # Calculate panning gains
-        pan_value = math.cos(math.radians(cur_DOA_angle))
-        phase_theta = math.pi / 4 * (pan_value + 1)
-        left_gain = math.sin(phase_theta)
-        right_gain = math.cos(phase_theta)
-        times.append(time.perf_counter())
+            # Calculate panning gains
+            pan_value = math.cos(math.radians(cur_DOA_angle))
+            phase_theta = math.pi / 4 * (pan_value + 1)
+            left_gain = math.sin(phase_theta)
+            right_gain = math.cos(phase_theta)
+            times.append(time.perf_counter())
 
-        # Multiply, clip, cast to int16
-        left_sig_array = np.clip(n0 * left_gain, -32768, 32767).astype(np.int16)
-        right_sig_array = np.clip(n0 * right_gain, -32768, 32767).astype(np.int16)
-        times.append(time.perf_counter())
+            # Multiply, clip, cast to int16
+            left_sig_array = np.clip(n0 * left_gain, -32768, 32767).astype(np.int16)
+            right_sig_array = np.clip(n0 * right_gain, -32768, 32767).astype(np.int16)
+            times.append(time.perf_counter())
 
-        # Convert to bytes for GStreamer
-        left_sig = left_sig_array.tobytes()
-        right_sig = right_sig_array.tobytes()
-        times.append(time.perf_counter())
+            # Convert to bytes for GStreamer
+            left_sig = left_sig_array.tobytes()
+            right_sig = right_sig_array.tobytes()
+            times.append(time.perf_counter())
+        else:
+            times.append(time.perf_counter())
+            left_sig, right_sig = n0.tobytes(), n0.tobytes()
 
         # Occasionally print debug info
         callback_counter += 1
@@ -135,7 +136,10 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
             print(
                 f"cnt: {callback_counter}, elapsed: {elapsed:.3f}, emit len: {len(left_sig)}"
             )
-            print_DOA(mic_tuning)
+            if USE_DOA:
+                print_DOA(mic_tuning)
+            else:
+                print(f"not using DOA. just streaming single mic")
 
         # Push to GStreamer appsrc1 (left) and appsrc2 (right)
         buf_s1 = Gst.Buffer.new_allocate(None, len(left_sig), None)
@@ -158,6 +162,25 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
     return (None, pyaudio.paContinue)
 
 
+def find_respeaker_index(p):
+    """
+    find the index of respeaker mic array. the device name is hardcoded.
+    p: pyaudio.PyAudio object.
+    """
+    info = p.get_host_api_info_by_index(0)
+    numdevices = info.get("deviceCount")
+
+    for i in range(0, numdevices):
+        cur_device_info = p.get_device_info_by_host_api_device_index(0, i)
+        if (cur_device_info.get("maxInputChannels")) > 0:
+            # we have the device
+            print(">>> Input Device id ", i, " - ", cur_device_info.get("name"))
+            if RESPEAKER_DEVICE_NAME in cur_device_info.get("name"):
+                print(f"<<< looked up respeaker index: {i}. returning")
+                return i
+    return -1
+
+
 if __name__ == "__main__":
     # Main GStreamer loop
     loop = GLib.MainLoop()
@@ -174,10 +197,21 @@ if __name__ == "__main__":
     format = p.get_format_from_width(RESPEAKER_WIDTH)
     channels = RESPEAKER_CHANNELS
     frames_per_buffer = CHUNK
-    print(f"""
-        got stats: 
-        rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_INDEX}, frames_per_buffer: {CHUNK}
-    """)
+    if RESPEAKER_INDEX is None:
+        RESPEAKER_INDEX = find_respeaker_index(p)
+        if RESPEAKER_INDEX < 0:
+            raise RuntimeError(
+                f"invalid RESPEAKER_INDEX: {RESPEAKER_INDEX} found. respeaker mic not available."
+            )
+
+    # DEBUG PART  ---------------------------------------------------------------------
+    print(
+        f"""got stats: 
+    rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_INDEX}, frames_per_buffer: {CHUNK}
+    """
+    )
+    device_info = p.get_device_info_by_index(RESPEAKER_INDEX)
+
     # Open the PyAudio stream in callback mode
     stream = p.open(
         rate=rate,
