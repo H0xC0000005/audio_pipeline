@@ -29,22 +29,44 @@ p = pyaudio.PyAudio()
 
 # We create the GStreamer pipeline
 audio_rate = RESPEAKER_RATE
+# pipeline_str = f"""
+# rtpbin name=rtpbin \
+#     appsrc name={SRC1_NAME} is-live=true format=time do-timestamp=true \
+#             ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+#             ! queue ! rtpL16pay ! rtpbin.send_rtp_sink_0 \
+#         rtpbin.send_rtp_src_0 ! udpsink host={IP} port=5000 sync=true async=false \
+#         rtpbin.send_rtcp_src_0 ! udpsink host={IP} port=5001 sync=false async=false \
+#         udpsrc port=5005 ! rtpbin.recv_rtcp_sink_0 \
+#     appsrc name={SRC2_NAME} is-live=true format=time do-timestamp=true \
+#             ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+#             ! queue ! volume volume=1.0 ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+#             ! rtpL16pay ! rtpbin.send_rtp_sink_1 \
+#         rtpbin.send_rtp_src_1 ! udpsink host={IP} port=5002 sync=true async=false \
+#         rtpbin.send_rtcp_src_1 ! udpsink host={IP} port=5003 sync=false async=false \
+#         udpsrc port=5007 ! rtpbin.recv_rtcp_sink_1
+# """
+if USE_PROCESSED:
+    volumn = 1.0
+else:
+    volumn = 2.0
 pipeline_str = f"""
 rtpbin name=rtpbin \
     appsrc name={SRC1_NAME} is-live=true format=time do-timestamp=true \
             ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
-            ! queue ! rtpL16pay ! rtpbin.send_rtp_sink_0 \
+            ! queue ! volume volume={volumn} ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+            ! rtpL16pay ! rtpbin.send_rtp_sink_0 \
         rtpbin.send_rtp_src_0 ! udpsink host={IP} port=5000 sync=true async=false \
         rtpbin.send_rtcp_src_0 ! udpsink host={IP} port=5001 sync=false async=false \
         udpsrc port=5005 ! rtpbin.recv_rtcp_sink_0 \
     appsrc name={SRC2_NAME} is-live=true format=time do-timestamp=true \
             ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
-            ! queue ! volume volume=0.5 ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
+            ! queue ! volume volume={volumn} ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=1 \
             ! rtpL16pay ! rtpbin.send_rtp_sink_1 \
         rtpbin.send_rtp_src_1 ! udpsink host={IP} port=5002 sync=true async=false \
         rtpbin.send_rtcp_src_1 ! udpsink host={IP} port=5003 sync=false async=false \
         udpsrc port=5007 ! rtpbin.recv_rtcp_sink_1
 """
+print(f">>>> launching pipeline:\n{pipeline_str}")
 
 pipeline = Gst.parse_launch(pipeline_str)
 appsrc1 = pipeline.get_by_name(SRC1_NAME)
@@ -80,7 +102,7 @@ def on_message(bus, message):
 # We keep a global counter for demonstration (so we can print every N frames)
 callback_counter = 0
 start_time = time.time()
-_print_interval = 10
+_print_interval = 100
 
 
 def audio_callback(in_data, frame_count, time_info, status_flags):
@@ -98,10 +120,13 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
         # Convert the raw audio to a NumPy int16 array
         raw_samples = np.frombuffer(in_data, dtype=np.int16)
 
-        # We only pan channel 0 (index 0 of 6) in your example
         # ch0: processed audio for ASR; ch1-4: mic's raw audio; ch5: playback(?)
-        # NOTE: ch0 has an ~85-105ms delay. use it carefully
-        n0 = raw_samples[1::6]
+        if USE_PROCESSED:
+            # use processed audio for ASR, channel 0
+            n0 = raw_samples[0::6]
+        else:
+            # use single mic, namely mic1
+            n0 = raw_samples[1::6]
         times.append(time.perf_counter())
 
         if USE_DOA:
