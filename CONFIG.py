@@ -11,7 +11,7 @@ USE_PROCESSED = True
 # DO NOT MODIFY!
 RESPEAKER_DEVICE_NAME = "ReSpeaker 4 Mic Array"
 RESPEAKER_RATE = 16000
-RESPEAKER_CHANNELS = 6
+RESPEAKER_CHANNELS = 1  # two versions of firmware, switch this if possible
 RESPEAKER_WIDTH = 2
 RESPEAKER_INDEX = None
 VENDOR_ID, PRODUCT_ID = 0x2886, 0x0018  # for respeaker 4mic array
