@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 # # test receiver with dual channel and panorama
 # # this is the same regardless the source type (mic or test)
 # # be aware of inserted guys such as volume comonent

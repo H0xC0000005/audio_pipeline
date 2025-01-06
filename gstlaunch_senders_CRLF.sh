@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 #-----------------------------------------------------------
 # band audio clk rate: 22050
 # respeaker mic array clk rate: 16000
