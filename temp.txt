@@ -1,3 +1,10 @@
-gst-launch-1.0 -v filesrc location=CantinaBand60.wav ! wavparse  ! audioconvert ! stereo ! audioconvert ! audioresample ! autoaudiosink
-gst-launch-1.0 -v filesrc location=CantinaBand60.wav ! wavparse  ! audioconvert ! audioconvert ! audioresample ! autoaudiosink
+memo
+
+latency
+original: 0.65s
+removing rtpjitterbuffer (receiver) and queue (sender): 0.4s
+
+# subject to error
+not using rtp, streaming locally with alsasrc: 0.25s
+set rtp latency to 50: 0.26s 
 

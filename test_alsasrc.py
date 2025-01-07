@@ -14,14 +14,32 @@ IP = "127.0.0.1"
 audio_rate = 16000
 
 # This pipeline captures from ALSA (mono, 16kHz) and sends via RTP
+# pipeline_str = f"""
+# rtpbin name=rtpbin
+#     alsasrc device=hw:1,0
+#         ! audioconvert
+#         ! audioresample
+#         ! audio/x-raw,rate={audio_rate},channels=1,format=S16LE,layout=interleaved
+#         ! queue ! audioconvert
+#         ! rtpL16pay
+#         ! rtpbin.send_rtp_sink_0
+
+#     rtpbin.send_rtp_src_0
+#         ! udpsink host={IP} port=5000 sync=true async=false
+
+#     rtpbin.send_rtcp_src_0
+#         ! udpsink host={IP} port=5001 sync=false async=false
+
+#     udpsrc port=5005
+#         ! rtpbin.recv_rtcp_sink_0
+# """
 pipeline_str = f"""
 rtpbin name=rtpbin
     alsasrc device=hw:1,0
         ! audioconvert 
         ! audioresample 
         ! audio/x-raw,rate={audio_rate},channels=1,format=S16LE,layout=interleaved
-        ! queue ! audioconvert
-        ! rtpL16pay
+        ! audioconvert ! rtpL16pay
         ! rtpbin.send_rtp_sink_0
 
     rtpbin.send_rtp_src_0
