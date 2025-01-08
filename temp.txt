@@ -8,3 +8,45 @@ removing rtpjitterbuffer (receiver) and queue (sender): 0.4s
 not using rtp, streaming locally with alsasrc: 0.25s
 set rtp latency to 50: 0.26s 
 
+
+>>> temp records
+1, Is kit just converting I2S/PDM to USB OK in low latency settings? What latency does it usually introduce? Such as MCHStreamer from MiniDSP?
+2, My "PC" is actually an Nvidia Jetson device, which has 2 USB3.0 and 4 ethernet interface. Can Nvidia Jetson directly process I2S or PDM? Except via USB, 
+How can I transmit the audio into the Jetson?
+3, If I want to use an audio processing kit to receive and initially process I2S or PDM from digital mic, and then send the audio to my Jetson via ethernet,
+what kind of intermediate processing kit can I use? Is it safe to use stuffs like Raspberry Pi or Arduino in my strict low latency setting?
+4, If I want to use analog mic but I want my Jetson to receive digital input (since it only has ethernet and USB ports), what kind of middleware should I 
+prepare? How should I stream the audio from analog mics to the Jetson? 
+And can my Jetson (with USB and ethernet ports only) receive analog audio input? If so, what shall I do to stream the analog audio?
+5, If I want to use an audio processing kit which converts PDM / I2S to Jetson recognizable format and does ethernet streaming via a cable, what would be 
+the format? What kind of kits do you recommend for my requirement (very low latency)?
+
+High-overhead reasons for prev mic (deductions):
+1, The USB interface can have cache and the firmware can have a conservative caching behaviour. USB devices usually introduce a high latency from 50ms to 
+200ms natively, the problem is by configuring the USB caching behaviour the latency can be reduced. The firmware is binary and cannot be configured,
+which may be the main reason for the high latency.
+2, The board firmware offers a very broad range of functionalities. I suspect that some of the functions are post-processing, which introduces latency 
+further. The XMOS chip itself may not be the main cause since it is widely used across all kinds of eval boards or interface boards. The seeed ReSpeaker
+itself seems is developed more for audio recording and processing rather for live streaming.
+
+solutions:
+1:
+mics: I2S breakout boards (e.g. Adafruit I2S MEMS Microphone Breakout - SPH0645LM4H)
+Jetson port: ethernet, RTP, hop traffic to windows
+middleware: Raspberry Pi / STM32 (digital to digital)
+
+2:
+mics: kit for raspberry pi, without processing chip but with ADC (e.g. ReSpeaker 4-Mic Array for Raspberry Pi, very lightweighted one)
+Jetson port: ethernet, RTP, hop traffic to windows
+middleware: Raspberry Pi (digital to digital)
+
+3 (the old proposal): 
+mics: I2S breakout boards
+Jetson port: USB, transmit to windows via RTP
+middleware: MCHStreamer kit (MiniDSP) (digital to digital)
+
+4:
+mics: I2S breakout boards
+Jetson port: ethernet, may need convertion to windows
+middleware: audio over ethernet middleware (e.g. XMOS AVB Audio Endpoint Kit)
+
