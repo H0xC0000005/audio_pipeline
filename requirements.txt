@@ -1,0 +1,7 @@
+click==8.0.3
+debugpy==1.8.11
+lark==1.1.1
+numpy==1.21.5
+PyAudio==0.2.14
+pyusb==1.2.1.post1
+
