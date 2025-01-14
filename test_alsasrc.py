@@ -3,20 +3,23 @@ import gi
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib
 import time
+import pyaudio
+
+from CONFIG import *
 
 # Initialize GStreamer
 Gst.init(None)
 
-# Configure your IP, audio_rate, etc.
-# IP = "192.168.0.209"
-IP = "127.0.0.1"
-
-audio_rate = 16000
+p = pyaudio.PyAudio()
+if RESPEAKER_ALSA_INDEX is None:
+    RESPEAKER_ALSA_INDEX = get_respeaker_alsa_identifier(p)
+    if RESPEAKER_ALSA_INDEX is None:
+        raise RuntimeError(f"cannot find alsa index of the respeaker mic.")
 
 # This pipeline captures from ALSA (mono, 16kHz) and sends via RTP
 # pipeline_str = f"""
 # rtpbin name=rtpbin
-#     alsasrc device=hw:1,0
+#     alsasrc device=hw:2,0
 #         ! audioconvert
 #         ! audioresample
 #         ! audio/x-raw,rate={audio_rate},channels=1,format=S16LE,layout=interleaved
@@ -35,10 +38,10 @@ audio_rate = 16000
 # """
 pipeline_str = f"""
 rtpbin name=rtpbin
-    alsasrc device=hw:1,0
+    alsasrc device={RESPEAKER_ALSA_INDEX}
         ! audioconvert 
         ! audioresample 
-        ! audio/x-raw,rate={audio_rate},channels=1,format=S16LE,layout=interleaved
+        ! audio/x-raw,rate={RESPEAKER_RATE},channels=1,format=S16LE,layout=interleaved
         ! audioconvert ! rtpL16pay
         ! rtpbin.send_rtp_sink_0
 
@@ -80,7 +83,7 @@ bus.connect("message", on_message)
 # Start pipeline
 pipeline.set_state(Gst.State.PLAYING)
 
-print("Capturing from ALSA (hw:1,0) and streaming via RTP. Press Ctrl+C to stop...")
+print("Capturing from ALSA streaming via RTP. Press Ctrl+C to stop...")
 try:
     loop.run()
 except KeyboardInterrupt:

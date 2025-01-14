@@ -37,6 +37,19 @@ gst-launch-1.0 -v rtpbin name=rtpbin \
     rtpbin.send_rtcp_src_1 ! udpsink host=$IP port=5007 sync=false async=false \
     audiomixer name=mix ! audioconvert ! audioresample ! autoaudiosink
 
+# gst-launch-1.0 -v rtpbin name=rtpbin \
+#     udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5000 ! \
+#     rtpbin.recv_rtp_sink_0 \
+#     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=-1.0 ! mix. \
+#     udpsrc port=5001 ! rtpbin.recv_rtcp_sink_0 \
+#     rtpbin.send_rtcp_src_0 ! udpsink host=$IP port=5005 sync=false async=false \
+#     udpsrc caps="application/x-rtp,media=(string)audio,clock-rate=(int)22050,encoding-name=(string)L16,channels=(int)1" port=5002 ! \
+#     rtpbin.recv_rtp_sink_1 \
+#     rtpbin. ! rtpL16depay ! audioconvert ! audioresample ! audiopanorama panorama=1.0 ! mix. \
+#     udpsrc port=5003 ! rtpbin.recv_rtcp_sink_1 \
+#     rtpbin.send_rtcp_src_1 ! udpsink host=$IP port=5007 sync=false async=false \
+#     audiomixer name=mix ! audioconvert ! audioresample ! autoaudiosink
+
 
 
 # gst-launch-1.0 -v \

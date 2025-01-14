@@ -1,4 +1,5 @@
 import math
+import sys
 import gi
 import numpy as np
 import threading
@@ -33,7 +34,22 @@ if USE_PROCESSED:
     VOLUMN = 1.0
 else:
     VOLUMN = 2.0
-# We use only one port (5000 for RTP, 5001 for RTCP, 5005 for RTCP reception)
+
+# pipeline_str = f"""
+# rtpbin name=rtpbin
+#     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
+#         ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
+#         ! queue ! audioconvert ! audioresample 
+#         ! rtpL16pay
+#         ! rtpbin.send_rtp_sink_0
+#     rtpbin.send_rtp_src_0
+#         ! udpsink host={IP} port=5000 sync=true async=false
+#     rtpbin.send_rtcp_src_0
+#         ! udpsink host={IP} port=5001 sync=false async=false
+#     udpsrc port=5005
+#         ! rtpbin.recv_rtcp_sink_0
+# """
+
 pipeline_str = f"""
 rtpbin name=rtpbin
     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
@@ -52,9 +68,6 @@ rtpbin name=rtpbin
 print(f">>>> launching pipeline:\n{pipeline_str}")
 
 pipeline = Gst.parse_launch(pipeline_str)
-
-### CHANGED ###
-# Only one appsrc now
 appsrc = pipeline.get_by_name(SRC_NAME)
 
 # We have 2 channels, 16-bit, same sample rate as mic
@@ -77,10 +90,17 @@ def on_message(bus, message):
         pipeline.set_state(Gst.State.NULL)
         loop.quit()
     elif t == Gst.MessageType.ERROR:
-        err, debug = message.parse_error()
-        print(f"Error: {err}, {debug}")
-        pipeline.set_state(Gst.State.NULL)
-        loop.quit()
+        try:
+            # err, debug = message.parse_error()
+            # print(f"Error: {err}, {debug}")
+            pipeline.set_state(Gst.State.NULL)
+            loop.quit()
+        except SystemError as e:
+            print(f"got system error: {e}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"got error received: {e}")
+            raise e
 
 
 callback_counter = 0
@@ -135,6 +155,10 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
                 print_DOA(mic_tuning)
             else:
                 print("not using DOA. just streaming single mic (2-ch identical)")
+            if USE_PROCESSED or RESPEAKER_CHANNELS < 2:
+                print(f"using processed audio or the single channel firmware.")
+            else:
+                print(f"using raw record of mic 1.")
 
         times.append(time.perf_counter())
         # Push one 2-channel buffer to GStreamer
@@ -154,19 +178,6 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
     return (None, pyaudio.paContinue)
 
 
-def find_respeaker_index(p):
-    info = p.get_host_api_info_by_index(0)
-    numdevices = info.get("deviceCount")
-    for i in range(0, numdevices):
-        cur_device_info = p.get_device_info_by_host_api_device_index(0, i)
-        if (cur_device_info.get("maxInputChannels")) > 0:
-            print(">>> Input Device id ", i, " - ", cur_device_info.get("name"))
-            if RESPEAKER_DEVICE_NAME in cur_device_info.get("name"):
-                print(f"<<< looked up respeaker index: {i}. returning")
-                return i
-    return -1
-
-
 if __name__ == "__main__":
     # Main loop
     loop = GLib.MainLoop()
@@ -184,24 +195,24 @@ if __name__ == "__main__":
     format = p.get_format_from_width(RESPEAKER_WIDTH)
     channels = RESPEAKER_CHANNELS
     frames_per_buffer = CHUNK
-    if RESPEAKER_INDEX is None:
-        RESPEAKER_INDEX = find_respeaker_index(p)
-        if RESPEAKER_INDEX < 0:
-            raise RuntimeError(f"invalid RESPEAKER_INDEX: {RESPEAKER_INDEX}")
+    if RESPEAKER_DEVICE_INDEX is None:
+        RESPEAKER_DEVICE_INDEX = get_respeaker_index(p)
+        if RESPEAKER_DEVICE_INDEX is None:
+            raise RuntimeError(f"invalid RESPEAKER_INDEX: {RESPEAKER_DEVICE_INDEX}")
 
     print(
         f"""got stats: 
-    rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_INDEX}, frames_per_buffer: {CHUNK}
+    rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_DEVICE_INDEX}, frames_per_buffer: {CHUNK}
     """
     )
-    device_info = p.get_device_info_by_index(RESPEAKER_INDEX)
+    device_info = p.get_device_info_by_index(RESPEAKER_DEVICE_INDEX)
 
     stream = p.open(
         rate=rate,
         format=format,
         channels=channels,
         input=True,
-        input_device_index=RESPEAKER_INDEX,
+        input_device_index=RESPEAKER_DEVICE_INDEX,
         frames_per_buffer=CHUNK,
         stream_callback=audio_callback,
     )

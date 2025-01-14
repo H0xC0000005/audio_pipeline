@@ -187,7 +187,7 @@ def audio_callback(in_data, frame_count, time_info, status_flags):
     return (None, pyaudio.paContinue)
 
 
-def find_respeaker_index(p):
+def get_respeaker_index(p):
     """
     find the index of respeaker mic array. the device name is hardcoded.
     p: pyaudio.PyAudio object.
@@ -222,20 +222,20 @@ if __name__ == "__main__":
     format = p.get_format_from_width(RESPEAKER_WIDTH)
     channels = RESPEAKER_CHANNELS
     frames_per_buffer = CHUNK
-    if RESPEAKER_INDEX is None:
-        RESPEAKER_INDEX = find_respeaker_index(p)
-        if RESPEAKER_INDEX < 0:
+    if RESPEAKER_DEVICE_INDEX is None:
+        RESPEAKER_DEVICE_INDEX = get_respeaker_index(p)
+        if RESPEAKER_DEVICE_INDEX < 0:
             raise RuntimeError(
-                f"invalid RESPEAKER_INDEX: {RESPEAKER_INDEX} found. respeaker mic not available."
+                f"invalid RESPEAKER_INDEX: {RESPEAKER_DEVICE_INDEX} found. respeaker mic not available."
             )
 
     # DEBUG PART  ---------------------------------------------------------------------
     print(
         f"""got stats: 
-    rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_INDEX}, frames_per_buffer: {CHUNK}
+    rate: {rate}, format: {format}, channels: {channels}, input_device_idx: {RESPEAKER_DEVICE_INDEX}, frames_per_buffer: {CHUNK}
     """
     )
-    device_info = p.get_device_info_by_index(RESPEAKER_INDEX)
+    device_info = p.get_device_info_by_index(RESPEAKER_DEVICE_INDEX)
 
     # Open the PyAudio stream in callback mode
     stream = p.open(
@@ -243,7 +243,7 @@ if __name__ == "__main__":
         format=p.get_format_from_width(RESPEAKER_WIDTH),
         channels=RESPEAKER_CHANNELS,
         input=True,
-        input_device_index=RESPEAKER_INDEX,
+        input_device_index=RESPEAKER_DEVICE_INDEX,
         frames_per_buffer=CHUNK,
         stream_callback=audio_callback,  # <-- The important part
     )

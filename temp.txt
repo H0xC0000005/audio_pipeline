@@ -50,3 +50,5 @@ mics: I2S breakout boards
 Jetson port: ethernet, may need convertion to windows
 middleware: audio over ethernet middleware (e.g. XMOS AVB Audio Endpoint Kit)
 
+
+-------------------------------------------------------------------------------------------------------

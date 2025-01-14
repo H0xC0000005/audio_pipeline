@@ -10,20 +10,19 @@ import usb.core
 import usb.util
 
 from tuning import Tuning
+from CONFIG import *
 
 # GObject.threads_init()
 Gst.init(None)
 
-RESPEAKER_RATE = 16000
-RESPEAKER_CHANNELS = 6
-RESPEAKER_WIDTH = 2
-RESPEAKER_INDEX = 10
-CHUNK = 160
-
+p = pyaudio.PyAudio()
+if RESPEAKER_DEVICE_INDEX is None:
+    RESPEAKER_DEVICE_INDEX = get_respeaker_index(p)
+    if RESPEAKER_DEVICE_INDEX is None:
+        raise RuntimeError(f"invalid RESPEAKER_INDEX: {RESPEAKER_DEVICE_INDEX}")
 src1_name = "SRC1"
 src2_name = "SRC2"
 
-p = pyaudio.PyAudio()
 dev: usb.core.Device
 vendor_id, product_id = 0x2886, 0x0018
 dev = usb.core.find(idVendor=vendor_id, idProduct=product_id)
@@ -40,7 +39,7 @@ stream = p.open(
     format=p.get_format_from_width(RESPEAKER_WIDTH),
     channels=RESPEAKER_CHANNELS,
     input=True,
-    input_device_index=RESPEAKER_INDEX,
+    input_device_index=RESPEAKER_DEVICE_INDEX,
 )
 
 pipeline_str = f"""
