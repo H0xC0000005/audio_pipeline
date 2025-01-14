@@ -36,7 +36,7 @@ else:
     VOLUMN = 2.0
 
 # pipeline_str = f"""
-# rtpbin name=rtpbin
+# rtpbin name=rtpbin latency={RTP_LATENCY}
 #     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
 #         ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
 #         ! queue ! audioconvert ! audioresample 
@@ -51,10 +51,11 @@ else:
 # """
 
 pipeline_str = f"""
-rtpbin name=rtpbin latency=50
+rtpbin name=rtpbin latency={RTP_LATENCY}
     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
         ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
-        ! queue ! audioconvert ! audioresample 
+        ! queue max-size-time=30000000 max-size-buffers=0 max-size-bytes=0 leaky=2 
+        ! audioconvert ! audioresample 
         ! rtpL16pay
         ! rtpbin.send_rtp_sink_0
     rtpbin.send_rtp_src_0

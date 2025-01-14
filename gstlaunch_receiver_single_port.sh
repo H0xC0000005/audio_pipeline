@@ -1,3 +1,4 @@
+# IP="127.0.0.1"
 IP="127.0.0.1"
 
 gst-launch-1.0 -v rtpbin name=rtpbin latency=50 \
