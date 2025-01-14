@@ -1,6 +1,6 @@
 IP="127.0.0.1"
 
-gst-launch-1.0 -v rtpbin name=rtpbin \
+gst-launch-1.0 -v rtpbin name=rtpbin latency=50 \
     udpsrc port=5000 caps="application/x-rtp,media=audio,clock-rate=16000,encoding-name=L16,channels=2" \
         ! rtpbin.recv_rtp_sink_0 \
     rtpbin. ! rtpL16depay \

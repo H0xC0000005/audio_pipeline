@@ -22,7 +22,7 @@ if RESPEAKER_ALSA_INDEX is None:
 #     alsasrc device=hw:2,0
 #         ! audioconvert
 #         ! audioresample
-#         ! audio/x-raw,rate={audio_rate},channels=1,format=S16LE,layout=interleaved
+#         ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
 #         ! queue ! audioconvert
 #         ! rtpL16pay
 #         ! rtpbin.send_rtp_sink_0
@@ -41,7 +41,7 @@ rtpbin name=rtpbin
     alsasrc device={RESPEAKER_ALSA_INDEX}
         ! audioconvert 
         ! audioresample 
-        ! audio/x-raw,rate={RESPEAKER_RATE},channels=1,format=S16LE,layout=interleaved
+        ! audio/x-raw,rate={RESPEAKER_RATE},channels=2,format=S16LE,layout=interleaved
         ! audioconvert ! rtpL16pay
         ! rtpbin.send_rtp_sink_0
 

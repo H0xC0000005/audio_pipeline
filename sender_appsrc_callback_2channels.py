@@ -51,7 +51,7 @@ else:
 # """
 
 pipeline_str = f"""
-rtpbin name=rtpbin
+rtpbin name=rtpbin latency=50
     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
         ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
         ! queue ! audioconvert ! audioresample 
