@@ -50,7 +50,8 @@ else:
 #         ! rtpbin.recv_rtcp_sink_0
 # """
 pipeline_str = f"""
-rtpbin name=rtpbin latency={RTP_LATENCY} drop-on-latency=true
+rtpbin name=rtpbin latency={RTP_LATENCY} drop-on-latency=true buffer-mode=0 
+        max-dropout-time=20 max-misorder-time=10 
     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
         ! audioconvert ! audioresample 
         ! rtpL16pay

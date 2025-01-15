@@ -1,7 +1,8 @@
 # IP="127.0.0.1"
 IP="127.0.0.1"
 
-gst-launch-1.0 -v rtpbin name=rtpbin latency=25 drop-on-latency=true\
+gst-launch-1.0 -v rtpbin name=rtpbin latency=20 drop-on-latency=true buffer-mode=0\
+        max-dropout-time=20 max-misorder-time=10\
     udpsrc port=5000 caps="application/x-rtp,media=audio,clock-rate=16000,encoding-name=L16,channels=2" \
         ! rtpbin.recv_rtp_sink_0 \
     rtpbin. ! rtpL16depay \
