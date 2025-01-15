@@ -34,12 +34,12 @@ if USE_PROCESSED:
     VOLUMN = 1.0
 else:
     VOLUMN = 2.0
-
 # pipeline_str = f"""
-# rtpbin name=rtpbin latency={RTP_LATENCY}
+# rtpbin name=rtpbin latency={RTP_LATENCY} drop-on-latency=true
 #     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
 #         ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
-#         ! queue ! audioconvert ! audioresample 
+#         ! queue max-size-time=30000000 max-size-buffers=0 max-size-bytes=0 leaky=2 
+#         ! audioconvert ! audioresample 
 #         ! rtpL16pay
 #         ! rtpbin.send_rtp_sink_0
 #     rtpbin.send_rtp_src_0
@@ -49,12 +49,9 @@ else:
 #     udpsrc port=5005
 #         ! rtpbin.recv_rtcp_sink_0
 # """
-
 pipeline_str = f"""
-rtpbin name=rtpbin latency={RTP_LATENCY}
+rtpbin name=rtpbin latency={RTP_LATENCY} drop-on-latency=true
     appsrc name={SRC_NAME} is-live=true format=time do-timestamp=true
-        ! audioconvert ! audioresample ! audio/x-raw,rate={audio_rate},channels=2,format=S16LE,layout=interleaved
-        ! queue max-size-time=30000000 max-size-buffers=0 max-size-bytes=0 leaky=2 
         ! audioconvert ! audioresample 
         ! rtpL16pay
         ! rtpbin.send_rtp_sink_0
@@ -106,7 +103,7 @@ def on_message(bus, message):
 
 callback_counter = 0
 start_time = time.time()
-_print_interval = 100
+_print_interval = 400
 
 
 def audio_callback(in_data, frame_count, time_info, status_flags):

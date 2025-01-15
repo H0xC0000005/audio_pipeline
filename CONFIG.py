@@ -10,7 +10,7 @@ SRC2_NAME = "SRC2"
 CHUNK = 128  # frames per buffer
 USE_DOA = False
 USE_PROCESSED = True
-RTP_LATENCY = 15
+RTP_LATENCY = 25
 
 # respeaker constants
 # DO NOT MODIFY!
