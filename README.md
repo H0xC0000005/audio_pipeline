@@ -38,6 +38,12 @@ There are a few utilities that help to test and discover USB and ALSA devices, a
    bash gstlaunch_receiver_single_port.sh
    ```
 
+   Or, you can run the powershell version on windows:
+
+   ```bash
+   .\\gstlaunch_receiver_single_port.ps1
+   ```
+
    Alternatively, you can run a different receiver script that pairs with the sender.
 
 Enjoy the audio!
@@ -46,9 +52,9 @@ Enjoy the audio!
 
 ## Launch options
 
-The repository provides some versions of sender-receiver pairs to launch, listed as below:
+The repository provides some versions of sender-receiver pairs to launch throughout, listed as below:
 
 1. sender_appsrc_callback_2channels.py + gstlaunch_receiver_single_port.sh. This is the pair with the best performance, but with ~260ms latency (though which is also the lowest in the first version).
 
-2. sender_appsrc_callback.py + gstlaunch_receivers.sh. This version puts less burden on the network (though the traffic is small and the first pair should work fine in very most cases), but two channels are asynchronous and can sometimes (or even often) misaligned.
+currently, all other pairs are deprecated. New configurations will appear here along with the development.
 
