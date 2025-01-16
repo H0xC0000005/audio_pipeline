@@ -1,8 +1,9 @@
 import re
 
 # runtime config
-# IP = "192.168.0.209"
-IP = "127.0.0.1"
+# IP = "192.168.0.130"
+IP = "192.168.0.209"
+# IP = "127.0.0.1"
 
 SRC1_NAME = "SRC1"
 SRC2_NAME = "SRC2"
